@@ -68,6 +68,18 @@ hosp_gerint <- hosp_raw %>%
 ```
 
 
+# Introduction {.sidebar}
+
+
+Esta página mostra o fluxo da quantidade de pacientes de dois bancos de dados diferentes: 
+
+* SIVEP Gripe
+* Gerint
+
+O SIVEP Gripe é a fonte oficial do monitoramento dos casos de pacientes covid do Ministério da Saúde, alimentada pelo sistema de notificação compulsória e revisado pela equipe da vigilância sanitária de Porto Alegre. As informações do SIVEP podem ter um lapso de tempo, em função da dificuldade das equipes da assistência notificarem os casos.
+
+O Gerint é o sistema de gerenciamento de internações da Secretaria da Saúde, que faz a regulação de todos os leitos SUS da cidade. O sistema está online e integrado com os sistemas hospitalares, entretanto não dispõe do dados dos Hospitais Privados.
+
 SIVEP
 ==================================================    
 Column {data-width=600}
