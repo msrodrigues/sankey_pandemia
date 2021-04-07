@@ -1,0 +1,108 @@
+---
+title: "Diagramas de fluxo de Pacientes"
+output: flexdashboard::flex_dashboard
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(tidyverse)
+library(ggplot2)
+library(ggthemes)
+library(janitor)
+library(plotly)
+library(sfo)
+
+Sys.setenv(TZ="America/Recife")
+options(tz="America/Recife")
+Sys.getenv("TZ")
+options(scipen = 999999)
+Sys.setlocale("LC_TIME", "pt_BR")
+
+source("~/Dropbox/Coding/R/funs/msrfun.R")
+
+tema <- theme_clean() + 
+  theme(plot.background = element_blank()) +
+  theme(legend.position = "bottom") +
+  theme(legend.background = element_rect(color = NA)) 
+
+# Carregamento do Sivep
+sivep <- read_rds(file = "~/Dropbox/Coding/R/data/sivep/bin/sivep.rds")
+
+
+hosp <- clean_names(sivep$hospitalizados_poa) %>% 
+  filter(id_municip == "PORTO ALEGRE") %>% 
+  mutate(across(where(is.factor), .fns = as.character)) %>% 
+  mutate(
+    residencia = if_else(id_mn_resi == "PORTO ALEGRE", "POA", "NÃO POA"),
+    situacao = if_else(flag_obito, "Óbito", "Alta"),
+    leito = if_else(uti == "Sim", "UTI", "Enfermaria"),
+    situacao = if_else(is.na(situacao), "situação indefinida", situacao),
+    cs_raca = if_else(is.na(cs_raca), "raça indefinida", cs_raca),
+    cs_escol_n = if_else(is.na(cs_escol_n), "escolaridade indefinida", cs_escol_n),
+    cs_sexo = if_else(is.na(cs_sexo), "sexo indefinido", cs_sexo)
+  ) %>% 
+  group_by(id_municip, residencia, id_unidade, leito, situacao, cs_raca, cs_sexo, cs_escol_n) %>% 
+  tally() 
+
+
+# Carregamento do Gerint
+
+gerint <- read_rds("~/Dropbox/Coding/R/data/gerint/bin/sankey_gerint.rds")
+
+hosp_raw <- gerint
+
+glimpse(hosp_raw)
+
+hosp_gerint <- hosp_raw %>% 
+  filter(flag_executante_poa, flag_covid) %>% 
+  #filter(datasolicitacao >= ymd("2021/02/01")) %>% 
+  select(origempaciente, tipointernacao,  tipoleito, executante, situacao, motivoalta) %>% 
+  group_by(origempaciente, tipointernacao, tipoleito, executante, situacao, motivoalta) %>% 
+  tally() %>% 
+  mutate(
+    motivoalta = if_else(is.na(motivoalta), "Ignorado", motivoalta)
+  )
+
+
+
+```
+
+
+SIVEP
+==================================================    
+Column {data-width=600}
+-------------------------------------
+    
+### Fluxo Geral com o Banco de Dados do SIVEP
+    
+```{r}
+hosp %>% 
+  sankey_ly(cat_cols = c("id_municip", "residencia",
+                         "id_unidade","leito", "situacao"),
+            num_col = "n",
+            title = "COVID-19 POA - Fonte: SIVEP")
+```
+
+
+
+
+GERINT
+================================================== 
+
+
+
+
+
+Column {data-width=600}
+-------------------------------------
+    
+### Fluxo Geral com o Banco de Dados do Gerint
+
+```{r}
+hosp_gerint %>% 
+  sankey_ly(cat_cols = c("origempaciente", "tipointernacao", 
+                         "tipoleito", "executante", "situacao", "motivoalta"),
+            num_col = "n",
+            title = "COVID-19 POA - Gerint")
+
+```
